@@ -1,21 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import Message from './Message';
+import Message from '../components/Message';
+import { ChatMessage } from '../interfaces';
+import { useChatService } from '../hooks/useChatService';
 
-interface ChatMessage {
-  text: string;
-  isUser: boolean;
-  id: string;
-}
-
-const Chat: React.FC = () => {
+const ChatPage: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const { sendMessage, sessionId } = useChatService();
 
   // メッセージが追加されたら自動スクロール
   useEffect(() => {
@@ -41,26 +38,11 @@ const Chat: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const requestData = {
-        message: input,
-        session_id: sessionId
-      };
-      
-      // 明示的にヘッダーを設定
-      const response = await axios.post('http://localhost:8000/api/chat', requestData, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      // レスポンスからセッションIDを保存
-      if (response.data.session_id) {
-        setSessionId(response.data.session_id);
-      }
+      const response = await sendMessage(input);
 
       // AIの応答を追加
       const aiMessage: ChatMessage = {
-        text: response.data.response,
+        text: response,
         isUser: false,
         id: `ai-${Date.now()}`
       };
@@ -85,6 +67,7 @@ const Chat: React.FC = () => {
   return (
     <div 
       style={{ 
+        width: '100%',
         maxWidth: '800px', 
         margin: '20px auto', 
         padding: '20px', 
@@ -101,6 +84,7 @@ const Chat: React.FC = () => {
           justifyContent: 'space-between', 
           alignItems: 'center',
           marginBottom: '24px',
+          width: '100%',
         }}
       >
         <motion.h1 
@@ -143,6 +127,7 @@ const Chat: React.FC = () => {
       <div
         style={{
           height: '500px',
+          width: '100%',
           border: `1px solid ${isDarkMode ? '#374151' : '#E5E7EB'}`,
           borderRadius: '12px',
           padding: '16px',
@@ -151,6 +136,7 @@ const Chat: React.FC = () => {
           backgroundColor: isDarkMode ? '#111827' : '#F9FAFB',
           transition: 'all 0.3s ease',
           scrollBehavior: 'smooth',
+          boxSizing: 'border-box',
         }}
       >
         {messages.length === 0 ? (
@@ -241,6 +227,7 @@ const Chat: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '12px', 
+          width: '100%',
         }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -250,59 +237,61 @@ const Chat: React.FC = () => {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={isLoading}
           placeholder="メッセージを入力..."
           style={{
-            flexGrow: 1,
-            padding: '16px',
-            borderRadius: '12px',
+            flex: 1,
+            padding: '12px 16px',
+            borderRadius: '24px',
             border: `1px solid ${isDarkMode ? '#374151' : '#E5E7EB'}`,
-            outline: 'none',
-            fontSize: '16px',
             backgroundColor: isDarkMode ? '#111827' : 'white',
             color: isDarkMode ? '#E5E7EB' : '#111827',
+            fontSize: '16px',
+            outline: 'none',
             transition: 'all 0.3s ease',
           }}
         />
         <motion.button
-          type="submit"
-          disabled={isLoading}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          type="submit"
+          disabled={isLoading || !input.trim()}
           style={{
-            padding: '16px 24px',
+            padding: '12px 24px',
+            borderRadius: '24px',
+            border: 'none',
             backgroundColor: '#6366F1',
             color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
             fontWeight: 600,
-            fontSize: '16px',
-            boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
-            transition: 'all 0.2s ease',
+            cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
+            opacity: isLoading || !input.trim() ? 0.7 : 1,
+            transition: 'all 0.3s ease',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: '8px',
-            opacity: isLoading ? 0.7 : 1,
           }}
         >
-          <span>送信</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" fill="currentColor" />
+          送信
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ marginLeft: '4px' }}
+          >
+            <path 
+              d="M5 12H19M19 12L12 5M19 12L12 19" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
           </svg>
         </motion.button>
       </motion.form>
-
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes pulse {
-            0%, 100% { transform: scale(0.8); opacity: 0.5; }
-            50% { transform: scale(1.2); opacity: 1; }
-          }
-        `
-      }} />
     </div>
   );
 };
 
-export default Chat; 
+export default ChatPage; 

@@ -42,7 +42,8 @@ pip install -r requirements.txt
 2. Start the FastAPI server:
 
 ```bash
-cd app/api && python run.py
+cd backend
+python run.py
 ```
 
 The server will run at http://localhost:8000 by default.

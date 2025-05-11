@@ -1,10 +1,10 @@
 import React from 'react';
-import Chat from './components/Chat';
+import ChatPage from './pages/ChatPage';
 
 const App: React.FC = () => {
   return (
     <div className="App">
-      <Chat />
+      <ChatPage />
     </div>
   );
 };
