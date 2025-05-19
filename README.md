@@ -18,7 +18,7 @@ A simple chatbot application using LangChain and OpenAI API.
 ## Prerequisites
 
 - Node.js (v14 or higher)
-- Python (v3.13.3)
+- Python (v3.11 以上)
 - OpenAI API key
 
 ## Setup
